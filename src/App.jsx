@@ -1,32 +1,50 @@
 // src/App.jsx
+import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+
+import { AuthProvider } from "./context/AuthContext";
+
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import AdminDashBoard from "./pages/AdminDashBoard/AdminDashBoard";
+import ProtectedRoute from "./routes/ProtectedRoute";
 
-function App() {
+export default function App() {
   return (
-    <Router>
-      <div className="min-h-screen min-w-screen flex flex-col bg-gray-50">
+    <AuthProvider>
+      <Router>
         <Navbar />
-        <div className="flex-grow flex items-center justify-center p-4">
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-           
-          
-          </Routes>
-        </div>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+
+          {/* Protected Routes */}
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <HomePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute adminOnly={true}>
+                <AdminDashBoard />
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
         <Footer />
-        <ToastContainer position="top-right" autoClose={2000} />
-      </div>
-    </Router>
+        <ToastContainer position="top-right" autoClose={3000} />
+      </Router>
+    </AuthProvider>
   );
 }
-
-export default App;

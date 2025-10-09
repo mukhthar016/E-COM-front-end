@@ -1,14 +1,19 @@
-import { useState } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useState } from "react";
+import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 export default function LoginPage() {
   const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    login(email, password);
+    const user = await login(email, password);
+    if (!user) return;
+    if (user.isAdmin) navigate("/admin");
+    else navigate("/");
   };
 
   return (
@@ -19,14 +24,14 @@ export default function LoginPage() {
           <input
             type="email"
             placeholder="Email"
-            className="border p-3 rounded text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="border p-3 rounded text-gray-800"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
           <input
             type="password"
             placeholder="Password"
-            className="border p-3 rounded text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="border p-3 rounded text-gray-800"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />

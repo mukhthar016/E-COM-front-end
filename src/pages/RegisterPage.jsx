@@ -1,17 +1,16 @@
-import { useState } from 'react';
-import { useAuth } from '../context/AuthContext';
-import {useNavigate} from 'react';
-const Navigate = useNavigate;
+import { useState } from "react";
+import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 export default function RegisterPage() {
   const { register } = useAuth();
   const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    register(form.name, form.email, form.password);
-    
-    
+    const success = await register(form.name, form.email, form.password);
+    if (success) navigate("/login");
   };
 
   return (
@@ -22,21 +21,21 @@ export default function RegisterPage() {
           <input
             type="text"
             placeholder="Name"
-            className="border p-3 rounded text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500"
+            className="border p-3 rounded text-gray-800"
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
           />
           <input
             type="email"
             placeholder="Email"
-            className="border p-3 rounded text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500"
+            className="border p-3 rounded text-gray-800"
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
           />
           <input
             type="password"
             placeholder="Password"
-            className="border p-3 rounded text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500"
+            className="border p-3 rounded text-gray-800"
             value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
           />
