@@ -12,7 +12,7 @@ console.log("hello")
   // Handle missing or wrong role
   if (!user || !user.isAdmin) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-100">
+      <div className="flex items-center justify-center h-screen w-screen bg-gray-100">
         <div className="text-center text-red-600 text-2xl font-semibold">
           🚫 Access Denied: Admins only.
         </div>
@@ -21,7 +21,7 @@ console.log("hello")
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <div className="flex min-h-screen min-w-screen bg-gray-100 text-white">
       {/* Sidebar */}
       <aside className="w-64 bg-white shadow-md p-6 flex flex-col justify-between">
         <div>
@@ -31,7 +31,7 @@ console.log("hello")
           <nav className="flex flex-col gap-3">
             <button
               onClick={() => setActiveTab("products")}
-              className={`p-2 rounded text-left ${
+              className={`p-2 rounded text-left text-white ${
                 activeTab === "products"
                   ? "bg-blue-600 text-white"
                   : "hover:bg-blue-100 text-gray-800"
@@ -41,7 +41,7 @@ console.log("hello")
             </button>
             <button
               onClick={() => setActiveTab("users")}
-              className={`p-2 rounded text-left ${
+              className={`p-2 rounded text-left text-white ${
                 activeTab === "users"
                   ? "bg-blue-600 text-white"
                   : "hover:bg-blue-100 text-gray-800"
@@ -51,7 +51,7 @@ console.log("hello")
             </button>
             <button
               onClick={() => setActiveTab("orders")}
-              className={`p-2 rounded text-left ${
+              className={`p-2 rounded text-left  text-white ${
                 activeTab === "orders"
                   ? "bg-blue-600 text-white"
                   : "hover:bg-blue-100 text-gray-800"
