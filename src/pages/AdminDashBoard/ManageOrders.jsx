@@ -8,19 +8,25 @@ export default function ManageOrders() {
     fetchOrders();
   }, []);
 
-  const fetchOrders = async () => {
-    try {
-      const res = await axios.get("http://localhost:5000/api/orders");
-      setOrders(res.data);
-    } catch (err) {
-      console.error("Error fetching orders:", err);
-    }
-  };
+const fetchOrders = async () => {
+  try {
+    const token = localStorage.getItem("token"); // assuming JWT saved after login
+    const res = await axios.get("http://localhost:5000/api/orders", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    setOrders(res.data);
+  } catch (err) {
+    console.error("Error fetching orders:", err);
+  }
+};
+
 
   return (
     <div>
-      <h2 className="text-2xl font-semibold mb-4">📦 Manage Orders</h2>
-      <div className="overflow-x-auto bg-white shadow-md rounded-lg">
+      <h2 className="text-2xl font-semibold mb-4 text-black">📦 Manage Orders</h2>
+      <div className="overflow-x-auto bg-white shadow-md rounded-lg text-black">
         <table className="w-full border-collapse">
           <thead>
             <tr className="bg-blue-600 text-white">

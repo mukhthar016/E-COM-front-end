@@ -1,8 +1,15 @@
-import React from "react";
+import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import AddToCartModal from "./AddToCartModal";
 
-export default function ProductCard({ product, onAddToCart }) {
+export default function ProductCard({ product, onCartUpdate }) {
   const { user } = useAuth();
+  const [showModal, setShowModal] = useState(false);
+
+  const handleAddToCartClick = () => {
+    if (!user) return;
+    setShowModal(true);
+  };
 
   return (
     <div className="border rounded-lg shadow p-4 flex flex-col justify-between bg-white hover:shadow-lg transition">
@@ -20,10 +27,18 @@ export default function ProductCard({ product, onAddToCart }) {
             : "bg-gray-400 cursor-not-allowed"
         }`}
         disabled={!user}
-        onClick={() => onAddToCart(product)}
+        onClick={handleAddToCartClick}
       >
         {user ? "Add to Cart" : "Login to add"}
       </button>
+
+      {showModal && (
+        <AddToCartModal
+          product={product}
+          onClose={() => setShowModal(false)}
+          onCartUpdate={onCartUpdate}
+        />
+      )}
     </div>
   );
 }

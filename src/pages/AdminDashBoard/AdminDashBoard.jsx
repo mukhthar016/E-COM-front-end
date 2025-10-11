@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
-import ManageProducts from "./ManageProducts";
+import ManageProducts from "./ManageProducts/ManageProducts";
 import ManageUsers from "./ManageUsers";
 import ManageOrders from "./ManageOrders";
 

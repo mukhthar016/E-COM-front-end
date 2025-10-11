@@ -10,23 +10,28 @@ export default function ManageUsers() {
 
   const fetchUsers = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/ALL");
-      setUsers(res.data);
-    } catch (err) {
-      console.error("Error fetching users:", err);
-    }
-  };
+    const token = localStorage.getItem("token"); // assuming JWT saved after login
+    const res = await axios.get("http://localhost:5000/api/users/ALL", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    setUsers(res.data);
+  } catch (err) {
+    console.error("Error fetching orders:", err);
+  }
+};
 
   return (
     <div>
-      <h2 className="text-2xl font-semibold mb-4">👥 Manage Users</h2>
-      <div className="overflow-x-auto bg-white shadow-md rounded-lg">
+      <h2 className="text-2xl font-semibold mb-4 text-black">👥 Manage Users</h2>
+      <div className="overflow-x-auto bg-white shadow-md rounded-lg text-black">
         <table className="w-full border-collapse">
           <thead>
             <tr className="bg-blue-600 text-white">
               <th className="p-3 text-left">Name</th>
               <th className="p-3 text-left">Email</th>
-              <th className="p-3 text-left">Role</th>
+             
             </tr>
           </thead>
           <tbody>
@@ -34,7 +39,7 @@ export default function ManageUsers() {
               <tr key={user._id} className="border-b hover:bg-blue-50">
                 <td className="p-3">{user.name}</td>
                 <td className="p-3">{user.email}</td>
-                <td className="p-3 capitalize">{user.role}</td>
+                
               </tr>
             ))}
           </tbody>
