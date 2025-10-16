@@ -21,7 +21,7 @@ console.log("hello")
   }
 
   return (
-    <div className="flex min-h-screen min-w-screen bg-gray-100 text-white">
+    <div className="flex min-h-screen w-316 bg-gray-100 text-white">
       {/* Sidebar */}
       <aside className="w-64 bg-white shadow-md p-6 flex flex-col justify-between">
         <div>

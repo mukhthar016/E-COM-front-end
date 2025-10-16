@@ -1,14 +1,15 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import axios from "../utils/axiosInstance";
+//import { useCart } from "./CartContext";
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
+  //const { mergeGuestCart } = useCart(); // ✅ merge guest cart after login
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem("token") || null);
 
-  // Load user from localStorage
   useEffect(() => {
     if (token) {
       const savedUser = JSON.parse(localStorage.getItem("user"));
@@ -24,8 +25,11 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
       toast.success("Login successful!");
+
+      // Merge guest cart into user cart
+     // mergeGuestCart();
+
       return res.data.user;
-      
     } catch (err) {
       toast.error(err.response?.data?.message || "Login failed");
       return null;

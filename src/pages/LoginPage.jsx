@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import { useCart } from "../context/CartContext";
 import { useNavigate } from "react-router-dom";
 
 export default function LoginPage() {
   const { login } = useAuth();
+  const { mergeGuestCart } = useCart();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
@@ -12,12 +14,16 @@ export default function LoginPage() {
     e.preventDefault();
     const user = await login(email, password);
     if (!user) return;
+
+    // merge guest cart into server cart
+    await mergeGuestCart();
+
     if (user.isAdmin) navigate("/admin");
-    else navigate("/");
+    else navigate("/"); // after login return to homepage
   };
 
   return (
-    <div className="min-w-screen min-h-screen flex items-center justify-center bg-gray-100">
+    <div className="w-316 min-h-screen flex items-center justify-center bg-gray-100">
       <div className="w-full max-w-md bg-white p-6 rounded-xl shadow-md">
         <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">Login</h2>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -41,7 +47,9 @@ export default function LoginPage() {
           >
             Login
           </button>
-       
+          <p className="text-sm mt-2 text-gray-600">
+            New user? <a href="/register" className="text-blue-600">Register</a>
+          </p>
         </form>
       </div>
     </div>

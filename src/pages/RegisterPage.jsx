@@ -14,7 +14,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-w-screen min-h-screen flex items-center justify-center bg-gray-100">
+    <div className="w-316 min-h-screen flex items-center justify-center bg-gray-100">
       <div className="w-full max-w-md bg-white p-6 rounded-xl shadow-md">
         <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">Register</h2>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">

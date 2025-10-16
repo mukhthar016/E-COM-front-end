@@ -1,44 +1,47 @@
 import React, { useState } from "react";
-import { useAuth } from "../context/AuthContext";
 import AddToCartModal from "./AddToCartModal";
 
-export default function ProductCard({ product, onCartUpdate }) {
-  const { user } = useAuth();
+export default function ProductCard({ product }) {
   const [showModal, setShowModal] = useState(false);
 
-  const handleAddToCartClick = () => {
-    if (!user) return;
-    setShowModal(true);
-  };
+  const handleOpenModal = () => setShowModal(true);
+  const handleCloseModal = () => setShowModal(false);
 
   return (
-    <div className="border rounded-lg shadow p-4 flex flex-col justify-between bg-white hover:shadow-lg transition">
-      <img
-        src={product.image}
-        alt={product.name}
-        className="w-full h-32 md:h-40 object-cover rounded"
-      />
-      <h3 className="font-bold mt-2 text-gray-800">{product.name}</h3>
-      <p className="text-gray-600 mt-1">₹{product.price}</p>
-      <button
-        className={`mt-4 py-2 rounded text-white ${
-          user
-            ? "bg-blue-500 hover:bg-blue-600"
-            : "bg-gray-400 cursor-not-allowed"
-        }`}
-        disabled={!user}
-        onClick={handleAddToCartClick}
+    <>
+      {/* Product Card */}
+      <div
+        className="border-none rounded-xl shadow-md p-4 flex flex-col justify-between bg-white 
+                   hover:shadow-lg transition-all duration-200 hover:-translate-y-1"
       >
-        {user ? "Add to Cart" : "Login to add"}
-      </button>
+        <div className="flex flex-col items-center text-center">
+          <img
+            src={product.image}
+            alt={product.name}
+            className="w-full h-36 object-cover rounded-md"
+          />
+          <h3 className="font-semibold mt-3 text-gray-800 text-lg line-clamp-1">
+            {product.name}
+          </h3>
+          <p className="text-indigo-600 font-medium mt-1 text-base">
+            ₹{product.price}
+          </p>
+        </div>
 
+        <button
+          className="mt-4 bg-green-900 hover:bg-indigo-600 text-white py-2 rounded-lg font-medium transition-all"
+          onClick={handleOpenModal}
+        >
+          Add to Cart
+        </button>
+      </div>
+
+      {/* Modal (Placed outside to avoid layout clipping issues) */}
       {showModal && (
-        <AddToCartModal
-          product={product}
-          onClose={() => setShowModal(false)}
-          onCartUpdate={onCartUpdate}
-        />
+        <div className="fixed inset-0 z-50">
+          <AddToCartModal product={product} onClose={handleCloseModal} />
+        </div>
       )}
-    </div>
+    </>
   );
 }

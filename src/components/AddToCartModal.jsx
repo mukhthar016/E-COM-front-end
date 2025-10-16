@@ -1,21 +1,19 @@
-import { useState } from "react";
-import axios from "../utils/axiosInstance";
+import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
+import { useCart } from "../context/CartContext";
 
-export default function AddToCartModal({ product, onClose, onCartUpdate }) {
+export default function AddToCartModal({ product, onClose }) {
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(false);
+  const { addToCart } = useCart();
 
   const handleAddToCart = async () => {
     if (quantity < 1) return toast.error("Quantity must be at least 1");
+
     try {
       setLoading(true);
-      const res = await axios.post("/cart", {
-        productId: product._id,
-        quantity,
-      });
-      toast.success("Added to cart!");
-      onCartUpdate(res.data.cart); // send updated cart to parent
+      await addToCart(product, quantity);
+      toast.success(`${product.name} added to cart!`);
       onClose();
     } catch (err) {
       toast.error("Failed to add to cart");
@@ -25,43 +23,68 @@ export default function AddToCartModal({ product, onClose, onCartUpdate }) {
     }
   };
 
+  // Smooth fade-in animation
+  const [isVisible, setIsVisible] = useState(false);
+  useEffect(() => {
+    setTimeout(() => setIsVisible(true), 50);
+  }, []);
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-sm relative">
+    <div
+      className={`fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 
+      transition-opacity duration-300 z-50 ${isVisible ? "opacity-100" : "opacity-0"}`}
+    >
+      <div
+        className="bg-white rounded-2xl shadow-2xl p-6 w-[90%] max-w-sm relative animate-fadeInUp 
+                   transform transition-transform duration-300 scale-100"
+      >
+        {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-2 right-3 text-gray-500 hover:text-black text-lg"
+          className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 text-2xl font-bold"
         >
-          ✖
+          ×
         </button>
 
-        <h3 className="text-xl font-semibold mb-4">{product.name}</h3>
-        <img
-          src={product.image}
-          alt={product.name}
-          className="w-full h-40 object-cover rounded mb-4"
-        />
-        <p className="text-gray-700 mb-2">Price: ₹{product.price}</p>
-
-        <div className="flex items-center gap-2 mb-4">
-          <label className="font-medium">Quantity:</label>
-          <input
-            type="number"
-            min="1"
-            value={quantity}
-            onChange={(e) => setQuantity(Number(e.target.value))}
-            className="border p-1 w-20 rounded text-center"
+        {/* Product Info */}
+        <div className="flex flex-col items-center text-center">
+          <img
+            src={product.image}
+            alt={product.name}
+            className="w-40 h-40 object-cover rounded-lg mb-4 shadow-md"
           />
+          <h3 className="text-xl font-semibold text-gray-800">{product.name}</h3>
+          <p className="text-indigo-600 font-bold mt-1 text-lg">₹{product.price}</p>
         </div>
 
-        <p className="text-gray-800 mb-4">
-          Total: ₹{(product.price * quantity).toFixed(2)}
+        {/* Quantity Selector */}
+        <div className="flex justify-center items-center gap-3 mt-5">
+          <button
+            onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+            className="bg-gray-200 hover:bg-gray-300 text-xl w-8 h-8 rounded-full flex items-center justify-center"
+          >
+            −
+          </button>
+          <span className="text-lg font-semibold">{quantity}</span>
+          <button
+            onClick={() => setQuantity((q) => q + 1)}
+            className="bg-gray-200 hover:bg-gray-300 text-xl w-8 h-8 rounded-full flex items-center justify-center"
+          >
+            +
+          </button>
+        </div>
+
+        {/* Total Price */}
+        <p className="text-gray-700 text-center mt-4 font-medium">
+          Total: <span className="text-indigo-600 font-bold">₹{(product.price * quantity).toFixed(2)}</span>
         </p>
 
+        {/* Add to Cart Button */}
         <button
           onClick={handleAddToCart}
           disabled={loading}
-          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+          className="mt-5 w-full bg-indigo-500 hover:bg-indigo-600 text-white py-2.5 
+                     rounded-lg font-semibold transition disabled:opacity-60"
         >
           {loading ? "Adding..." : "Add to Cart"}
         </button>
