@@ -198,7 +198,7 @@ export default function OrdersPage() {
                       </span>
                       <button
                         onClick={() => handleWithdrawFeedback(order._id)}
-                        className="text-red-500 hover:text-red-600 text-xs underline"
+                        className="text-red-500 hover:text-red-600 text-xs bg-gray-190"
                       >
                         Withdraw
                       </button>
