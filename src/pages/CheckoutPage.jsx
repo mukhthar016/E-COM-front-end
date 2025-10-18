@@ -6,7 +6,7 @@ import { useAuth } from "../context/AuthContext";
 
 export default function CheckoutPage() {
   const { user } = useAuth();
-  const location = useLocation();
+  const location = useLocation(); 
   const navigate = useNavigate();
   const { cart, totalPrice, clearCart } = useCart();
   const addressId = location.state?.addressId;
@@ -15,14 +15,14 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState("COD");
   const [loading, setLoading] = useState(false);
 
-  // ✅ Redirect guest users safely
+  //  Redirect guest users safely
   useEffect(() => {
     if (!user) {
       navigate("/login");
     }
   }, [user, navigate]);
 
-  // ✅ Fetch address
+  //  Fetch address
   useEffect(() => {
     if (user && addressId) {
       const fetchAddress = async () => {
@@ -38,7 +38,7 @@ export default function CheckoutPage() {
     }
   }, [user, addressId]);
 
-  // ✅ If user is not logged in or address is loading
+  //  If user is not logged in or address is loading
   if (!user) {
     return (
       <div className="min-h-screen w-316 flex items-center justify-center text-gray-600">

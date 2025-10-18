@@ -2,10 +2,15 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
-export default function ProtectedRoute({ children, adminOnly = false }) {
+export default function ProtectedRoute({
+  children,
+  adminOnly = false,
+  userOnly = false,
+  guestAllowed = false,
+}) {
   const { user, token } = useAuth();
 
-  // still loading user from localStorage (token present but user state not set yet)
+  // Wait for user state to load if token exists
   if (token && user === null) {
     return (
       <div className="min-h-screen flex items-center justify-center text-gray-600">
@@ -14,12 +19,24 @@ export default function ProtectedRoute({ children, adminOnly = false }) {
     );
   }
 
-  // if not logged in -> send to login
+  // If route allows guests (no login required)
+  if (guestAllowed) {
+    // Block admins from guest routes like home/cart
+    if (user?.isAdmin === true) {
+      return <Navigate to="/admin" replace />;
+    }
+    return children;
+  }
+
+  // For all other routes, must be logged in
   if (!user) return <Navigate to="/login" replace />;
 
-  // if route requires admin but user isn't admin -> send to home
-  if (adminOnly && !user.isAdmin) return <Navigate to="/" replace />;
+  // If admin-only route and user is not admin
+  if (adminOnly && user.isAdmin !== true) return <Navigate to="/" replace />;
 
-  // allowed
+  // If user-only route and user is admin
+  if (userOnly && user.isAdmin === true) return <Navigate to="/admin" replace />;
+
+  // ✅ Allowed
   return children;
 }

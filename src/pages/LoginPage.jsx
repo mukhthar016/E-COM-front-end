@@ -31,6 +31,7 @@ export default function LoginPage() {
             type="email"
             placeholder="Email"
             className="border p-3 rounded text-gray-800"
+            required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
@@ -38,6 +39,7 @@ export default function LoginPage() {
             type="password"
             placeholder="Password"
             className="border p-3 rounded text-gray-800"
+            required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />

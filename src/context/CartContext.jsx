@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useEffect, useCallback } from "react";
+// src/context/CartContext.jsx
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import axios from "../utils/axiosInstance";
 import { useAuth } from "./AuthContext";
 
@@ -7,184 +8,213 @@ export const useCart = () => useContext(CartContext);
 
 export const CartProvider = ({ children }) => {
   const { user } = useAuth();
-  const [cart, setCart] = useState([]);
+  const [cart, setCart] = useState([]); // items: [{ product, quantity }]
   const [loading, setLoading] = useState(false);
+  const [initialized, setInitialized] = useState(false); // avoid race on first load
 
-  // ===== Load cart when user changes =====
-  useEffect(() => {
-    if (user) mergeGuestCart();
-    else loadGuestCart();
-  }, [user]);
-
-  // ===== Guest Cart Helpers =====
-  const loadGuestCart = () => {
-    const guestCart = localStorage.getItem("guest_cart");
-    setCart(guestCart ? JSON.parse(guestCart) : []);
-  };
-
-  const saveGuestCart = (items) => {
-    localStorage.setItem("guest_cart", JSON.stringify(items));
-  };
-
-  // ===== Fetch User Cart =====
-  const fetchCart = useCallback(async () => {
-    if (!user) return loadGuestCart();
+  // === Helpers for guest cart ===
+  const loadGuestCart = useCallback(() => {
     try {
-      setLoading(true);
-      const res = await axios.get("/cart", { withCredentials: true });
+      const raw = localStorage.getItem("guest_cart");
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  }, []);
+
+  const saveGuestCart = useCallback((items) => {
+    try {
+      localStorage.setItem("guest_cart", JSON.stringify(items));
+    } catch {}
+  }, []);
+
+  // === Fetch backend cart (user only) ===
+  const fetchCart = useCallback(async () => {
+    if (!user) {
+      // for guests, read local storage
+      const g = loadGuestCart();
+      setCart(g);
+      setInitialized(true);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await axios.get("/cart"); // axiosInstance handles token/withCredentials
       setCart(res.data.items || []);
     } catch (err) {
-      console.error("Error fetching cart:", err);
+      console.error("fetchCart error:", err);
       setCart([]);
     } finally {
       setLoading(false);
+      setInitialized(true);
     }
-  }, [user]);
+  }, [user, loadGuestCart]);
 
-  useEffect(() => {
-    fetchCart();
-  }, [user, fetchCart]);
+  // === Merge guest cart into user cart on login ===
+  const mergeGuestCart = useCallback(async () => {
+    if (!user) return;
+    const raw = localStorage.getItem("guest_cart");
+    if (!raw) return;
 
-  // ===== Merge Guest Cart =====
-  const mergeGuestCart = async () => {
-  const guestCart = localStorage.getItem("guest_cart");
-  if (!user || !guestCart) return;
-
-  try {
-    const guestItems = JSON.parse(guestCart);
-
-    // 1️⃣ Fetch existing user cart first
-    const res = await axios.get("/cart", { withCredentials: true });
-    const userItems = res.data.items || [];
-
-    // 2️⃣ Build a merged map combining quantities
-    const mergedMap = new Map();
-
-    // Add existing user cart items first
-    for (const item of userItems) {
-      mergedMap.set(item.product._id, { productId: item.product._id, quantity: item.quantity });
-    }
-
-    // Add guest items (increase quantity if already exists)
-    for (const gItem of guestItems) {
-      const pid = gItem.product._id;
-      if (mergedMap.has(pid)) {
-        mergedMap.get(pid).quantity += gItem.quantity;
-      } else {
-        mergedMap.set(pid, { productId: pid, quantity: gItem.quantity });
-      }
-    }
-
-    // 3️⃣ Clear backend cart before re-adding merged version
-    await axios.delete("/cart", { withCredentials: true });
-
-    // 4️⃣ Add merged items back
-    for (const item of mergedMap.values()) {
-      await axios.post("/cart", item, { withCredentials: true });
-    }
-
-    // 5️⃣ Clear guest cart
+    const items = JSON.parse(raw);
+    // remove guest immediately to avoid duplicate merges
     localStorage.removeItem("guest_cart");
 
-    // 6️⃣ Refresh final cart state
-    await fetchCart();
-  } catch (err) {
-    console.error("Error merging guest cart:", err);
-  }
-};
+    try {
+      // Send once to backend. Backend should merge and return final cart if you implement it.
+      await axios.post("/cart/merge", { items });
+      // fetch backend cart once to sync final server state
+      await fetchCart();
+    } catch (err) {
+      console.error("Error merging guest cart:", err);
+      // if merge fails, restore guest cart so user doesn't lose it
+      saveGuestCart(items);
+      await fetchCart();
+    }
+  }, [user, fetchCart, saveGuestCart]);
 
-
-  // ===== Add / Update / Remove =====
-  const addToCart = async (product, quantity = 1) => {
+  // Initial load and user-change handling
+  useEffect(() => {
+    // on user change: if login -> merge guest cart then fetch
     if (user) {
-      try {
-        await axios.post("/cart", { productId: product._id, quantity }, { withCredentials: true });
-        fetchCart();
-      } catch (err) {
-        console.error("Error adding to cart:", err);
-      }
+      mergeGuestCart();
     } else {
-      const existing = cart.find((c) => c.product._id === product._id);
-      let updatedCart;
-      if (existing) {
-        updatedCart = cart.map((c) =>
-          c.product._id === product._id ? { ...c, quantity: c.quantity + quantity } : c
-        );
+      // logout or guest -> read local storage
+      const g = loadGuestCart();
+      setCart(g);
+      setInitialized(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]); // use mergeGuestCart & loadGuestCart inside to avoid dependence loops
+
+  // Make sure we fetch cart on mount or when user changes (fetchCart called in merge or above)
+  useEffect(() => {
+    // only fetch if not initialized or user state changed externally
+    if (!initialized) fetchCart();
+  }, [fetchCart, initialized]);
+
+  // ===== Optimistic add/update/remove helpers =====
+  const addToCart = useCallback(
+    async (product, quantity = 1) => {
+      if (user) {
+        // optimistic update locally
+        setCart((prev) => {
+          const idx = prev.findIndex((c) => c.product._id === product._id);
+          if (idx > -1) {
+            const next = [...prev];
+            next[idx] = { ...next[idx], quantity: next[idx].quantity + quantity };
+            return next;
+          }
+          return [...prev, { product, quantity }];
+        });
+
+        // fire-and-forget API request (still await to catch failure)
+        try {
+          await axios.post("/cart", { productId: product._id, quantity });
+          // do NOT force a full refetch here — server will be consistent normally.
+        } catch (err) {
+          console.error("addToCart API failed:", err);
+          // Optionally: refetch to reconcile
+          fetchCart();
+        }
       } else {
-        updatedCart = [...cart, { product, quantity }];
+        // guest
+        setCart((prev) => {
+          const idx = prev.findIndex((c) => c.product._id === product._id);
+          let next;
+          if (idx > -1) {
+            next = prev.map((c) =>
+              c.product._id === product._id ? { ...c, quantity: c.quantity + quantity } : c
+            );
+          } else {
+            next = [...prev, { product, quantity }];
+          }
+          saveGuestCart(next);
+          return next;
+        });
       }
-      setCart(updatedCart);
-      saveGuestCart(updatedCart);
-    }
-  };
+    },
+    [user, fetchCart, saveGuestCart]
+  );
 
-  const updateCartItem = async (productId, quantity) => {
+  const updateCartItem = useCallback(
+    async (productId, quantity) => {
+      if (user) {
+        // optimistic local update
+        setCart((prev) => prev.map((c) => (c.product._id === productId ? { ...c, quantity } : c)));
+        try {
+          await axios.put("/cart", { productId, quantity });
+        } catch (err) {
+          console.error("updateCartItem API failed:", err);
+          // reconcile
+          fetchCart();
+        }
+      } else {
+        setCart((prev) => {
+          const next = prev.map((c) => (c.product._id === productId ? { ...c, quantity } : c));
+          saveGuestCart(next);
+          return next;
+        });
+      }
+    },
+    [user, fetchCart, saveGuestCart]
+  );
+
+  const removeCartItem = useCallback(
+    async (productId) => {
+      if (user) {
+        // optimistic removal
+        setCart((prev) => prev.filter((c) => c.product._id !== productId));
+        try {
+          await axios.delete(`/cart/${productId}`);
+        } catch (err) {
+          console.error("removeCartItem API failed:", err);
+          fetchCart();
+        }
+      } else {
+        setCart((prev) => {
+          const next = prev.filter((c) => c.product._id !== productId);
+          saveGuestCart(next);
+          return next;
+        });
+      }
+    },
+    [user, fetchCart, saveGuestCart]
+  );
+
+  const clearCart = useCallback(async () => {
     if (user) {
       try {
-        await axios.put("/cart", { productId, quantity }, { withCredentials: true });
-        fetchCart();
+        await axios.delete("/cart");
       } catch (err) {
-        console.error("Error updating cart:", err);
-      }
-    } else {
-      const updatedCart = cart.map((c) =>
-        c.product._id === productId ? { ...c, quantity } : c
-      );
-      setCart(updatedCart);
-      saveGuestCart(updatedCart);
-    }
-  };
-
-  const removeCartItem = async (productId) => {
-    if (user) {
-      try {
-        await axios.delete("/cart", { data: { productId }, withCredentials: true });
-        fetchCart();
-      } catch (err) {
-        console.error("Error removing cart item:", err);
-      }
-    } else {
-      const updatedCart = cart.filter((c) => c.product._id !== productId);
-      setCart(updatedCart);
-      saveGuestCart(updatedCart);
-    }
-  };
-
-  const clearCart = async () => {
-    if (user) {
-      try {
-        await axios.delete("/cart", { withCredentials: true });
-      } catch (err) {
-        console.error("Error clearing cart:", err);
+        console.error("clearCart failed:", err);
       }
     }
     setCart([]);
     localStorage.removeItem("guest_cart");
-  };
+  }, [user]);
 
-  // ===== Totals =====
-  const totalItems = cart.reduce((sum, item) => sum + (item.quantity || 0), 0);
-  const totalPrice = cart.reduce(
-    (sum, item) => sum + (item.product?.price || 0) * (item.quantity || 0),
-    0
+  // totals (recomputed only when cart changes)
+  const totalItems = useMemo(() => cart.reduce((s, i) => s + (i.quantity || 0), 0), [cart]);
+  const totalPrice = useMemo(() => cart.reduce((s, i) => s + (i.product?.price || 0) * (i.quantity || 0), 0), [cart]);
+
+  // stable context value
+  const value = useMemo(
+    () => ({
+      cart,
+      loading,
+      addToCart,
+      updateCartItem,
+      removeCartItem,
+      clearCart,
+      fetchCart,
+      mergeGuestCart, // expose if caller wants explicit refetch
+      totalItems,
+      totalPrice,
+    }),
+    [cart, loading, addToCart, updateCartItem, removeCartItem, clearCart, fetchCart, totalItems, totalPrice]
   );
 
-  return (
-    <CartContext.Provider
-      value={{
-        cart,
-        loading,
-        addToCart,
-        updateCartItem,
-        removeCartItem,
-        clearCart,
-        fetchCart,
-        mergeGuestCart,
-        totalItems,
-        totalPrice,
-      }}
-    >
-      {children}
-    </CartContext.Provider>
-  );
+  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 };

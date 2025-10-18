@@ -22,7 +22,7 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div className="min-h-screen w-316 bg-gradient-to-br from-gray-50 via-white to-gray-100 text-gray-900">
+    <div className="min-h-screen  w-316 bg-gradient-to-br from-gray-50 via-white to-gray-100 text-gray-900">
       
   
       

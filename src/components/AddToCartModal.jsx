@@ -58,14 +58,14 @@ export default function AddToCartModal({ product, onClose }) {
         </div>
 
         {/* Quantity Selector */}
-        <div className="flex justify-center items-center gap-3 mt-5">
+        <div className="flex justify-center items-center gap-3 mt-5 text-gray-100">
           <button
             onClick={() => setQuantity((q) => Math.max(1, q - 1))}
             className="bg-gray-200 hover:bg-gray-300 text-xl w-8 h-8 rounded-full flex items-center justify-center"
           >
             −
           </button>
-          <span className="text-lg font-semibold">{quantity}</span>
+          <span className="text-lg font-semibold text-black">{quantity}</span>
           <button
             onClick={() => setQuantity((q) => q + 1)}
             className="bg-gray-200 hover:bg-gray-300 text-xl w-8 h-8 rounded-full flex items-center justify-center"

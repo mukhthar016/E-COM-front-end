@@ -11,7 +11,7 @@ export default function ProductCard({ product }) {
     <>
       {/* Product Card */}
       <div
-        className="border-none rounded-xl shadow-md p-4 flex flex-col justify-between bg-white 
+        className="border-none rounded-xl shadow-md p-4 flex flex-col justify-between bg-green-50 
                    hover:shadow-lg transition-all duration-200 hover:-translate-y-1"
       >
         <div className="flex flex-col items-center text-center">
@@ -20,16 +20,16 @@ export default function ProductCard({ product }) {
             alt={product.name}
             className="w-full h-36 object-cover rounded-md"
           />
-          <h3 className="font-semibold mt-3 text-gray-800 text-lg line-clamp-1">
+          <h3 className="font-semibold mt-3 text-green-900 text-lg line-clamp-1">
             {product.name}
           </h3>
-          <p className="text-indigo-600 font-medium mt-1 text-base">
+          <p className="text-green-600 font-medium mt-1 text-base">
             ₹{product.price}
           </p>
         </div>
 
         <button
-          className="mt-4 bg-green-900 hover:bg-indigo-600 text-white py-2 rounded-lg font-medium transition-all"
+          className="mt-4 bg-green-100 hover:bg-green-900 text-white py-2 rounded-lg font-medium transition-all"
           onClick={handleOpenModal}
         >
           Add to Cart

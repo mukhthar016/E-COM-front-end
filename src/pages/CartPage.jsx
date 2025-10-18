@@ -1,8 +1,62 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, memo } from "react";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import axios from "../utils/axiosInstance";
+
+// ✅ Memoized Cart Item — prevents re-render of all items when one updates
+const CartItem = memo(function CartItem({ item, onUpdate, onRemove }) {
+  return (
+    <div
+      key={item?.product?._id}
+      className="flex flex-col md:flex-row justify-between items-center border-b border-gray-200 py-4"
+    >
+      <div className="flex items-center gap-4 w-full md:w-2/3">
+        <img
+          src={item?.product?.image || "/placeholder.jpg"}
+          alt={item?.product?.name || "Product"}
+          className="w-20 h-20 rounded object-cover border"
+        />
+        <div>
+          <h3 className="text-lg font-semibold text-gray-800">
+            {item?.product?.name || "Unnamed Product"}
+          </h3>
+          <p className="text-gray-600">
+            ₹{item?.product?.price?.toFixed(2) || 0} each
+          </p>
+          <p className="text-sm text-gray-500">
+            Subtotal:{" "}
+            <span className="font-semibold text-blue-600">
+              ₹{((item?.product?.price || 0) * (item.quantity || 0)).toFixed(2)}
+            </span>
+          </p>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-3 mt-3 md:mt-0">
+        <button
+          onClick={() => onUpdate(item.product._id, Math.max(item.quantity - 1, 1))}
+          className="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded-lg text-gray-700 font-bold transition"
+        >
+          −
+        </button>
+        <span className="text-lg font-medium text-black">{item.quantity}</span>
+        <button
+          onClick={() => onUpdate(item.product._id, item.quantity + 1)}
+          className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-bold transition"
+        >
+          +
+        </button>
+        <button
+          onClick={() => onRemove(item.product._id)}
+          className="ml-4 text-red-600 hover:text-red-700 font-semibold text-sm transition"
+        >
+          Remove
+        </button>
+      </div>
+    </div>
+  );
+});
 
 export default function CartPage() {
   const { cart, totalPrice, updateCartItem, removeCartItem, loading } = useCart();
@@ -21,11 +75,9 @@ export default function CartPage() {
     pincode: "",
   });
 
-  useEffect(() => {
-    if (user) fetchAddresses();
-  }, [user]);
-
-  const fetchAddresses = async () => {
+  // 🧠 Fetch addresses only when needed
+  const fetchAddresses = useCallback(async () => {
+    if (!user) return;
     try {
       const res = await axios.get("/addresses");
       setAddresses(res.data);
@@ -33,7 +85,11 @@ export default function CartPage() {
     } catch (err) {
       console.error("Error fetching addresses:", err);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    fetchAddresses();
+  }, [fetchAddresses]);
 
   const handleAddAddress = async (e) => {
     e.preventDefault();
@@ -41,7 +97,6 @@ export default function CartPage() {
       await axios.post("/addresses", {
         label: "Home",
         line1: formData.street,
-        line2: "",
         city: formData.city,
         state: formData.state,
         country: "India",
@@ -49,6 +104,7 @@ export default function CartPage() {
         phone: formData.phone,
         isDefault: false,
       });
+      setShowForm(false);
       fetchAddresses();
     } catch (err) {
       console.error("Error adding address:", err);
@@ -66,14 +122,23 @@ export default function CartPage() {
   };
 
   const handleCheckout = () => {
-    if (!user) {
-      navigate("/login");
-      return;
-    }
+    if (!user) return navigate("/login");
     if (!selectedAddress) return alert("Please select a delivery address!");
     navigate("/checkout", { state: { addressId: selectedAddress } });
   };
 
+  //  Stable callbacks — prevent re-renders in memoized CartItem
+  const handleQuantityChange = useCallback(
+    (id, qty) => updateCartItem(id, qty),
+    [updateCartItem]
+  );
+
+  const handleRemoveItem = useCallback(
+    (id) => removeCartItem(id),
+    [removeCartItem]
+  );
+
+  //  UI Rendering
   if (loading)
     return (
       <div className="min-h-screen w-316 flex items-center justify-center text-blue-600 font-semibold text-xl">
@@ -105,63 +170,19 @@ export default function CartPage() {
       <div className="max-w-5xl mx-auto grid md:grid-cols-3 gap-6">
         {/* CART ITEMS */}
         <div className="md:col-span-2 bg-white rounded-xl shadow-lg p-6">
-          {cart.map((item, index) => (
-            <div
-              key={`${item?.product?._id}-${index}`}
-
-              className="flex flex-col md:flex-row justify-between items-center border-b border-gray-200 py-4"
-            >
-              <div className="flex items-center gap-4 w-full md:w-2/3">
-                <img
-                  src={item?.product?.image || "/placeholder.jpg"}
-                  alt={item?.product?.name || "Product"}
-                  className="w-20 h-20 rounded object-cover border"
-                />
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800">
-                    {item?.product?.name || "Unnamed Product"}
-                  </h3>
-                  <p className="text-gray-600">
-                    ₹{item?.product?.price?.toFixed(2) || 0} each
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    Subtotal:{" "}
-                    <span className="font-semibold text-blue-600">
-                      ₹{((item?.product?.price || 0) * (item.quantity || 0)).toFixed(2)}
-                    </span>
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 mt-3 md:mt-0">
-                <button
-                  onClick={() =>
-                    updateCartItem(item.product._id, Math.max(item.quantity - 1, 1))
-                  }
-                  className="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded-lg text-gray-700 font-bold transition"
-                >
-                  −
-                </button>
-                <span className="text-lg font-medium text-black">{item.quantity}</span>
-                <button
-                  onClick={() => updateCartItem(item.product._id, item.quantity + 1)}
-                  className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-bold transition"
-                >
-                  +
-                </button>
-                <button
-                  onClick={() => removeCartItem(item.product._id)}
-                  className="ml-4 text-red-600 hover:text-red-700 font-semibold text-sm transition"
-                >
-                  Remove
-                </button>
-              </div>
-            </div>
+          {cart.map((item) => (
+            <CartItem
+              key={item.product._id}
+              item={item}
+              onUpdate={handleQuantityChange}
+              onRemove={handleRemoveItem}
+            />
           ))}
 
           <div className="mt-8 border-t pt-6 text-right">
             <h2 className="text-xl font-bold text-gray-800">
-              Total: <span className="text-blue-600">₹{totalPrice.toFixed(2)}</span>
+              Total:{" "}
+              <span className="text-blue-600">₹{totalPrice.toFixed(2)}</span>
             </h2>
           </div>
         </div>
@@ -170,7 +191,9 @@ export default function CartPage() {
         <div className="bg-white rounded-xl shadow-lg p-6 text-black">
           {user ? (
             <>
-              <h2 className="text-xl font-bold text-gray-800 mb-3">Delivery Address</h2>
+              <h2 className="text-xl font-bold text-gray-800 mb-3">
+                Delivery Address
+              </h2>
 
               {addresses.length === 0 && (
                 <p className="text-gray-500 mb-3">No saved addresses yet.</p>
@@ -193,8 +216,12 @@ export default function CartPage() {
                       onChange={() => setSelectedAddress(addr._id)}
                       className="mr-2"
                     />
-                    <span className="font-medium text-gray-800">{addr.fullName}</span>
-                    <p className="text-sm text-gray-600">{addr.street}, {addr.city}</p>
+                    <span className="font-medium text-gray-800">
+                      {addr.fullName}
+                    </span>
+                    <p className="text-sm text-gray-600">
+                      {addr.street}, {addr.city}
+                    </p>
                     <p className="text-sm text-gray-600">
                       {addr.state} - {addr.pincode}
                     </p>
@@ -223,7 +250,9 @@ export default function CartPage() {
                       key={key}
                       type="text"
                       required
-                      placeholder={key.charAt(0).toUpperCase() + key.slice(1)}
+                      placeholder={
+                        key.charAt(0).toUpperCase() + key.slice(1)
+                      }
                       value={formData[key]}
                       onChange={(e) =>
                         setFormData({ ...formData, [key]: e.target.value })
@@ -242,7 +271,14 @@ export default function CartPage() {
             </>
           ) : (
             <p className="text-gray-600 text-center">
-              Please <span className="text-blue-600 cursor-pointer" onClick={() => navigate("/login")}>login</span> to add a delivery address.
+              Please{" "}
+              <span
+                className="text-blue-600 cursor-pointer"
+                onClick={() => navigate("/login")}
+              >
+                login
+              </span>{" "}
+              to add a delivery address.
             </p>
           )}
 

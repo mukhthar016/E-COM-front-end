@@ -21,7 +21,7 @@ export const AddressProvider = ({ children }) => {
       const res = await axios.get("/addresses");
       setAddresses(res.data);
     } catch (err) {
-      console.error("❌ Error fetching addresses:", err);
+      console.error(" Error fetching addresses:", err);
     } finally {
       setLoading(false);
     }
@@ -32,7 +32,7 @@ export const AddressProvider = ({ children }) => {
       await axios.post("/addresses", data);
       await fetchAddresses();
     } catch (err) {
-      console.error("❌ Error adding address:", err);
+      console.error(" Error adding address:", err);
     }
   };
 
@@ -41,7 +41,7 @@ export const AddressProvider = ({ children }) => {
       await axios.put(`/addresses/${id}`, data);
       await fetchAddresses();
     } catch (err) {
-      console.error("❌ Error updating address:", err);
+      console.error(" Error updating address:", err);
     }
   };
 
@@ -50,7 +50,7 @@ export const AddressProvider = ({ children }) => {
       await axios.delete(`/addresses/${id}`);
       await fetchAddresses();
     } catch (err) {
-      console.error("❌ Error deleting address:", err);
+      console.error(" Error deleting address:", err);
     }
   };
 

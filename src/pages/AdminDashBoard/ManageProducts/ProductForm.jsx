@@ -1,41 +1,56 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "../../../utils/axiosInstance";
 import { toast } from "react-toastify";
-import CategoryForm from "./CategoryForm";
 
-export default function ProductForm({
-  product,
-  onClose,
-  onSave,
-  categories,
-  refreshCategories,
-}) {
-  const [form, setForm] = useState(
-    product || { name: "", price: "", stock: "", category: "", image: "" }
-  );
-  const [addingCategory, setAddingCategory] = useState(false);
+export default function ProductForm({ product, onClose, onSave, categories }) {
+  const [form, setForm] = useState({
+    name: product?.name || "",
+    price: product?.price || "",
+    stock: product?.stock || "",
+    category: product?.category?._id || "",
+  });
+  const [imageFile, setImageFile] = useState(null); // New file input
+  const [preview, setPreview] = useState(product?.image || "");
+
+  // Show preview when file selected
+  useEffect(() => {
+    if (imageFile) {
+      const objectUrl = URL.createObjectURL(imageFile);
+      setPreview(objectUrl);
+      return () => URL.revokeObjectURL(objectUrl);
+    }
+  }, [imageFile]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!form.name || !form.price || !form.category) {
+      return toast.error("Please fill all required fields");
+    }
+
     try {
+      const formData = new FormData();
+      formData.append("name", form.name);
+      formData.append("price", form.price);
+      formData.append("stock", form.stock);
+      formData.append("categoryId", form.category);
+      if (imageFile) formData.append("image", imageFile); // Send file to backend
+
       let res;
       if (product?._id) {
-        res = await axios.put(`/products/${product._id}`, form);
-        onSave(res.data.product, true);
-        toast.success("Product updated!");
-      } else {
-        res = await axios.post("/products", {
-          name: form.name,
-          price: form.price,
-          stock: form.stock,
-          categoryId: form.category,
-          image: form.image,
+        res = await axios.put(`/products/${product._id}`, formData, {
+          headers: { "Content-Type": "multipart/form-data" },
         });
-        onSave(res.data.product, false);
-        toast.success("Product added!");
+      } else {
+        res = await axios.post("/products", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
       }
+
+      onSave(res.data.product, !!product);
+      toast.success(`Product ${product ? "updated" : "added"} successfully`);
     } catch (err) {
-      toast.error("Error saving product",err);
+      console.error(err);
+      toast.error(err.response?.data?.message || "Operation failed");
     }
   };
 
@@ -78,19 +93,12 @@ export default function ProductForm({
             className="w-full border p-2 rounded"
             value={form.stock}
             onChange={(e) => setForm({ ...form, stock: e.target.value })}
-            required
           />
 
           <select
             className="w-full border p-2 rounded"
             value={form.category}
-            onChange={(e) => {
-              if (e.target.value === "add_new") {
-                setAddingCategory(true);
-              } else {
-                setForm({ ...form, category: e.target.value });
-              }
-            }}
+            onChange={(e) => setForm({ ...form, category: e.target.value })}
             required
           >
             <option value="">Select Category</option>
@@ -99,32 +107,29 @@ export default function ProductForm({
                 {c.name}
               </option>
             ))}
-            <option value="add_new">➕ Add new category</option>
           </select>
 
-          {addingCategory && (
-            <CategoryForm
-              onAdded={() => {
-                setAddingCategory(false);
-                refreshCategories();
-              }}
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => setImageFile(e.target.files[0])}
+            className="border p-1 rounded"
+          />
+
+          {preview && (
+            <img
+              src={preview}
+              alt="Preview"
+              className="w-32 h-32 object-cover rounded mt-2"
             />
           )}
-
-          <input
-            type="text"
-            placeholder="Image URL"
-            className="w-full border p-2 rounded"
-            value={form.image}
-            onChange={(e) => setForm({ ...form, image: e.target.value })}
-          />
 
           <div className="flex gap-2">
             <button
               type="submit"
               className="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
             >
-              {product ? "Update" : "Save"}
+              {product ? "Update" : "Save"} Product
             </button>
             <button
               type="button"

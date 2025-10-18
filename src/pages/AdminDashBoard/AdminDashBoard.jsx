@@ -3,12 +3,14 @@ import { useAuth } from "../../context/AuthContext";
 import ManageProducts from "./ManageProducts/ManageProducts";
 import ManageUsers from "./ManageUsers";
 import ManageOrders from "./ManageOrders";
+import CategoryPage from "./CategoryPage";
+import ManageFeedback from "./ManageFeedback"
 
 export default function AdminDashboard() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("products");
 
-console.log("hello")
+//console.log("hello")
   // Handle missing or wrong role
   if (!user || !user.isAdmin) {
     return (
@@ -25,9 +27,7 @@ console.log("hello")
       {/* Sidebar */}
       <aside className="w-64 bg-white shadow-md p-6 flex flex-col justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-blue-600 mb-6">
-            Admin Panel
-          </h2>
+          
           <nav className="flex flex-col gap-3">
             <button
               onClick={() => setActiveTab("products")}
@@ -59,15 +59,31 @@ console.log("hello")
             >
               📦 Manage Orders
             </button>
+            <button
+              onClick={() => setActiveTab("category")}
+              className={`p-2 rounded text-left  text-white ${
+                activeTab === "category"
+                  ? "bg-blue-600 text-white"
+                  : "hover:bg-blue-100 text-gray-800"
+              }`}
+            >
+               Manage category
+            </button>
+            <button
+  onClick={() => setActiveTab("feedbacks")}
+  className={`p-2 rounded text-left  text-white ${
+    activeTab === "feedbacks"
+      ? "bg-blue-600 text-white"
+      : "hover:bg-blue-100 text-gray-800"
+  }`}
+>
+  📝 Manage Feedback
+</button>
+
           </nav>
         </div>
 
-        <button
-          onClick={logout}
-          className="mt-10 w-full bg-red-500 text-white py-2 rounded hover:bg-red-600"
-        >
-          Logout
-        </button>
+        
       </aside>
 
       {/* Main Content */}
@@ -75,6 +91,9 @@ console.log("hello")
         {activeTab === "products" && <ManageProducts />}
         {activeTab === "users" && <ManageUsers />}
         {activeTab === "orders" && <ManageOrders />}
+        {activeTab === "category" && <CategoryPage />}
+        {activeTab === "feedbacks" && <ManageFeedback />}
+
       </main>
     </div>
   );
