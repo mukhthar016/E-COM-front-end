@@ -4,7 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import axios from "../utils/axiosInstance";
 
-// ✅ Memoized Cart Item — prevents re-render of all items when one updates
+
 const CartItem = memo(function CartItem({ item, onUpdate, onRemove }) {
   return (
     <div

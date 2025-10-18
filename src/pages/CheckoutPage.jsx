@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import axios from "../utils/axiosInstance";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
+import {toast} from "react-toastify";
 
 export default function CheckoutPage() {
   const { user } = useAuth();
@@ -75,8 +76,10 @@ export default function CheckoutPage() {
       if (paymentMethod === "COD") {
         await axios.post("/orders", orderPayload);
         clearCart();
-        alert("Order placed successfully (COD)!");
-        navigate("/");
+        toast.success("Order placed successfully (COD)!");
+        navigate("/", { replace: true });
+window.scrollTo({ top: 0, behavior: "smooth" });
+
       } else {
         // Online payment flow
         const { data } = await axios.post("/payments/razorpay/create-order", {
@@ -102,8 +105,10 @@ export default function CheckoutPage() {
               if (verifyRes.data.success) {
                 await axios.post("/orders", orderPayload);
                 clearCart();
-                alert("Payment successful! Order placed.");
-                navigate("/");
+                toast.success("Payment successful! Order placed.");
+                navigate("/", { replace: true });
+window.scrollTo({ top: 0, behavior: "smooth" });
+
               } else {
                 alert("Payment verification failed.");
               }
