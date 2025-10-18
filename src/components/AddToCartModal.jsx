@@ -7,8 +7,22 @@ export default function AddToCartModal({ product, onClose }) {
   const [loading, setLoading] = useState(false);
   const { addToCart } = useCart();
 
+  const handleIncrease = () => {
+    if (quantity >= product.stock) {
+      toast.warn(`Only ${product.stock} left in stock`);
+      return;
+    }
+    setQuantity((q) => q + 1);
+  };
+
+  const handleDecrease = () => {
+    setQuantity((q) => Math.max(1, q - 1));
+  };
+
   const handleAddToCart = async () => {
     if (quantity < 1) return toast.error("Quantity must be at least 1");
+    if (quantity > product.stock)
+      return toast.error(`Only ${product.stock} available in stock`);
 
     try {
       setLoading(true);
@@ -54,20 +68,23 @@ export default function AddToCartModal({ product, onClose }) {
             className="w-40 h-40 object-cover rounded-lg mb-4 shadow-md"
           />
           <h3 className="text-xl font-semibold text-gray-800">{product.name}</h3>
-          <p className="text-indigo-600 font-bold mt-1 text-lg">₹{product.price}</p>
+          <p className="text-indigo-600 font-bold mt-1 text-lg">
+            ₹{product.price}
+          </p>
+         
         </div>
 
         {/* Quantity Selector */}
         <div className="flex justify-center items-center gap-3 mt-5 text-gray-100">
           <button
-            onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+            onClick={handleDecrease}
             className="bg-gray-200 hover:bg-gray-300 text-xl w-8 h-8 rounded-full flex items-center justify-center"
           >
             −
           </button>
           <span className="text-lg font-semibold text-black">{quantity}</span>
           <button
-            onClick={() => setQuantity((q) => q + 1)}
+            onClick={handleIncrease}
             className="bg-gray-200 hover:bg-gray-300 text-xl w-8 h-8 rounded-full flex items-center justify-center"
           >
             +
@@ -76,13 +93,16 @@ export default function AddToCartModal({ product, onClose }) {
 
         {/* Total Price */}
         <p className="text-gray-700 text-center mt-4 font-medium">
-          Total: <span className="text-indigo-600 font-bold">₹{(product.price * quantity).toFixed(2)}</span>
+          Total:{" "}
+          <span className="text-indigo-600 font-bold">
+            ₹{(product.price * quantity).toFixed(2)}
+          </span>
         </p>
 
         {/* Add to Cart Button */}
         <button
           onClick={handleAddToCart}
-          disabled={loading}
+          disabled={loading || product.stock <= 0}
           className="mt-5 w-full bg-indigo-500 hover:bg-indigo-600 text-white py-2.5 
                      rounded-lg font-semibold transition disabled:opacity-60"
         >

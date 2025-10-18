@@ -78,7 +78,7 @@ export default function CheckoutPage() {
         clearCart();
         toast.success("Order placed successfully (COD)!");
         navigate("/", { replace: true });
-window.scrollTo({ top: 0, behavior: "smooth" });
+        window.scrollTo({ top: 0, behavior: "smooth" });
 
       } else {
         // Online payment flow
@@ -107,7 +107,7 @@ window.scrollTo({ top: 0, behavior: "smooth" });
                 clearCart();
                 toast.success("Payment successful! Order placed.");
                 navigate("/", { replace: true });
-window.scrollTo({ top: 0, behavior: "smooth" });
+                window.scrollTo({ top: 0, behavior: "smooth" });
 
               } else {
                 alert("Payment verification failed.");

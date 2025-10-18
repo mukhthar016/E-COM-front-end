@@ -186,7 +186,7 @@ export const CartProvider = ({ children }) => {
   const clearCart = useCallback(async () => {
     if (user) {
       try {
-        await axios.delete("/cart");
+       console.log("order placed")
       } catch (err) {
         console.error("clearCart failed:", err);
       }
